@@ -1,0 +1,21 @@
+FLAG = False
+MIXUP_START = 2
+LAMBDA = 0.5
+
+INPUT_COLUMN = 'text'
+DATA_COLUMN = 'category'
+OUTPUT_COLUMN = 'label'
+
+NUM_EPOCHS = 3
+MAX_LEN = 256
+BATCH_SIZE = 16
+
+print("INPUT_COLUMN: ", INPUT_COLUMN)
+print("DATA_COLUMN: ", DATA_COLUMN)
+print("OUTPUT_COLUMN: ", OUTPUT_COLUMN)
+print("NUM_EPOCHS: ", NUM_EPOCHS)
+print("MAX_LEN: ", MAX_LEN)
+print("BATCH_SIZE: ", BATCH_SIZE)
+print("LAMBDA: ", LAMBDA)
+print("FLAG: ", FLAG)
+print("MIXUP_START: ", MIXUP_START)

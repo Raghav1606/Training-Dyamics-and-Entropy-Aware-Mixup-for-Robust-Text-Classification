@@ -1,16 +1,24 @@
+'''
+python msp_eval_mixup.py \
+--model_path ../model_checkpoints/roberta_ckpts_mixup_random_imdb \
+--dataset_name sst2 
+'''
+
+
 import torch.nn.functional as F
 import torch
 import numpy as np
 import pandas as pd
 import os
 from tqdm import tqdm
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoTokenizer
+from modeling_mixup_roberta import RobertaMixerForSequenceClassification
 from datasets import load_dataset
 import fire
 import time
 from roberta_fine_tune import eval, process_hf_dataset, process_lm_dataset, process_custom_dataset
 
-SAVE_PATH = '../output/msp/'
+SAVE_PATH = '../output/msp_mixup/'
 if not os.path.exists(SAVE_PATH):
     os.makedirs(SAVE_PATH)
 
@@ -51,7 +59,7 @@ def main(model_path, val_file=None, dataset_name=None, dataset_config_name=None,
     print("Loading model...")
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForSequenceClassification.from_pretrained(model_path).to(device)
+    model = RobertaMixerForSequenceClassification.from_pretrained(model_path).to(device)
     padding = 'max_length'
     glue = ['sst2', 'mnli']
 
@@ -98,15 +106,17 @@ def main(model_path, val_file=None, dataset_name=None, dataset_config_name=None,
             dataloader = process_lm_dataset(val_file, tokenizer, padding, max_length, batch_size, n=n, num_label_chars=0, shuffle=False)
             with_labels = False
 
+
     print('Evaluating model')
     start_time = time.time()
     probs = eval(model, dataloader, device, with_labels=with_labels)
     end_time = time.time()
     print("MSP runtime:", end_time - start_time)
-    np.save(os.path.join(SAVE_PATH, f'{fname}_probs'), probs)
+    FNAME = f"{str(args.model_path.split('/')[-1]).replace('roberta_ckpts_', '')}_{args.dataset_name}"
+    np.save(os.path.join(SAVE_PATH, f'{FNAME}_probs'), probs)
     if save_msp:
         msp = np.max(probs, axis=1)
-        np.save(os.path.join(SAVE_PATH, f'{fname}_msp'), msp)
+        np.save(os.path.join(SAVE_PATH, f'{FNAME}_msp'), msp)
 
 if __name__ == '__main__':
     fire.Fire(main)
