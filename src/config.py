@@ -1,12 +1,15 @@
+# Author: Atharva Kulkarni
+# Config file to train entropy-based mixup Roberta
+
 FLAG = False
-MIXUP_START = 2
+MIXUP_START = 3
 LAMBDA = 0.5
 
 INPUT_COLUMN = 'text'
 DATA_COLUMN = 'category'
 OUTPUT_COLUMN = 'label'
 
-NUM_EPOCHS = 5
+NUM_EPOCHS = 10
 MAX_LEN = None
 BATCH_SIZE = 8
 LEARNING_RATE = 1e-5

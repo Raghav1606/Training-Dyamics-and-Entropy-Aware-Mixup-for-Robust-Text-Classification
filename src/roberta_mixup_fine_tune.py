@@ -1,10 +1,13 @@
+# Author: Atharva Kulkarni
+# File to train entropy-based mixup Roberta
+
 '''
 
 nohup python3 -u roberta_mixup_fine_tune.py \
 --task_name imdb \
 --roberta_version roberta-base \
 --sampling_type random \
---device 0 > ../out_files/modeling_mixup_roberta_imdb_random.out &
+--device 1 > ../out_files/modeling_mixup_roberta_imdb_random_same.out &
 
 python3 roberta_mixup_fine_tune.py \
 --task_name imdb \
@@ -43,6 +46,71 @@ from config import *
 
 # --------------------------------------------------- MixupDataset Class ---------------------------------------------------
 
+# def prepare_dataset(data, info_data=None, mixup=False):
+    
+#     # Remove none and hard examples
+#     data = data[(data['category'] != 'none') & (data['category'] != 'hard')].reset_index(drop=True)
+
+#     # Add softmax and entropy info
+#     if (info_data is not None) and mixup:
+#         data = pd.merge(data, info_data, on='idx')[['idx', 'text', 'label', 'category', 'softmax', 'entropy']]
+#         mixup_size = len(info_data) - len(data)
+
+#         # --------------------------------------- Same class mixup ---------------------------------------  
+
+#         # Easy-Easy Mixup
+#         easy_data = data[data['category'] == 'easy']
+#         easy_low_ent_idx = easy_data.sort_values('entropy', ascending=True).head(mixup_size//3)['idx'].tolist()
+#         easy_high_ent_idx = easy_data.sort_values('entropy', ascending=False).head(mixup_size//3)['idx'].tolist()
+        
+#         easy_mixup_data = easy_data[easy_data['idx'].isin(easy_low_ent_idx)].reset_index(drop=True)
+#         random.shuffle(easy_high_ent_idx)
+#         easy_mixup_data['idx_2'] = easy_high_ent_idx
+#         easy_mixup_data['text_2'] = easy_mixup_data['idx_2'].apply(lambda x: easy_data[easy_data['idx'] == x]['text'].values[0])
+#         easy_mixup_data['label_2'] = easy_mixup_data['idx_2'].apply(lambda x: easy_data[easy_data['idx'] == x]['label'].values[0])
+#         easy_mixup_data['category_2'] = easy_mixup_data['idx_2'].apply(lambda x: easy_data[easy_data['idx'] == x]['category'].values[0])
+#         easy_mixup_data['mixup_type'] = 'same_easy'
+        
+#         # Ambi-Ambi Mixup
+#         ambiguous_data = data[data['category'] == 'ambiguous']
+#         ambiguous_low_ent_idx = ambiguous_data.sort_values('entropy', ascending=True).head(mixup_size//3)['idx'].tolist()
+#         ambiguous_high_ent_idx = ambiguous_data.sort_values('entropy', ascending=False).head(mixup_size//3)['idx'].tolist()
+        
+#         ambiguous_mixup_data = ambiguous_data[ambiguous_data['idx'].isin(ambiguous_low_ent_idx)].reset_index(drop=True)
+#         random.shuffle(ambiguous_high_ent_idx)
+#         ambiguous_mixup_data['idx_2'] = ambiguous_high_ent_idx
+#         ambiguous_mixup_data['text_2'] = ambiguous_mixup_data['idx_2'].apply(lambda x: ambiguous_data[ambiguous_data['idx'] == x]['text'].values[0])
+#         ambiguous_mixup_data['label_2'] = ambiguous_mixup_data['idx_2'].apply(lambda x: ambiguous_data[ambiguous_data['idx'] == x]['label'].values[0])
+#         ambiguous_mixup_data['category_2'] = ambiguous_mixup_data['idx_2'].apply(lambda x: ambiguous_data[ambiguous_data['idx'] == x]['category'].values[0])
+#         ambiguous_mixup_data['mixup_type'] = 'same_ambiguous'
+        
+#         same_mixup_data = pd.concat([easy_mixup_data, ambiguous_mixup_data]).reset_index(drop=True)
+        
+#         # --------------------------------------- Different class mixup ---------------------------------------  
+        
+#         # Random easy-ambi mixup
+#         different_samples = mixup_size - len(same_mixup_data)
+#         easy_tuple = list(zip(easy_data['idx'].tolist(), easy_data['text'].tolist(), easy_data['label'].tolist(), easy_data['category'].tolist()))
+#         ambiguous_tuple = list(zip(ambiguous_data['idx'].tolist(), ambiguous_data['text'].tolist(), ambiguous_data['label'].tolist(), ambiguous_data['category'].tolist()))
+        
+#         easy_data = easy_data.sample(n=different_samples//2).reset_index(drop=True)
+#         ambiguous4easy = random.choices(ambiguous_tuple, weights=np.ones(len(ambiguous_tuple)), k=different_samples//2)
+#         ambiguous4easy = pd.DataFrame(ambiguous4easy, columns=['idx_2', 'text_2', 'label_2', 'category_2'])
+#         ambiguous4easy = pd.concat([easy_data, ambiguous4easy], axis=1).reset_index(drop=True)
+#         ambiguous4easy['mixup_type'] = 'ambiguous_easy'
+        
+#         ambiguous_data = ambiguous_data.sample(n=different_samples//2).reset_index(drop=True)
+#         easy4ambiguous = random.choices(easy_tuple, weights=np.ones(len(easy_tuple)), k=different_samples//2)
+#         easy4ambiguous = pd.DataFrame(easy4ambiguous, columns=['idx_2', 'text_2', 'label_2', 'category_2'])
+#         easy4ambiguous = pd.concat([ambiguous_data, easy4ambiguous], axis=1).reset_index(drop=True)
+#         easy4ambiguous['mixup_type'] = 'easy_ambiguous'
+        
+#         return pd.concat([same_mixup_data, easy4ambiguous, ambiguous4easy]).sample(frac=1).reset_index(drop=True)
+
+#     return data
+
+
+
 def prepare_dataset(data, info_data=None, mixup=False):
     
     # Remove none and hard examples
@@ -57,8 +125,8 @@ def prepare_dataset(data, info_data=None, mixup=False):
 
         # Easy-Easy Mixup
         easy_data = data[data['category'] == 'easy']
-        easy_low_ent_idx = easy_data.sort_values('entropy', ascending=True).head(mixup_size//3)['idx'].tolist()
-        easy_high_ent_idx = easy_data.sort_values('entropy', ascending=False).head(mixup_size//3)['idx'].tolist()
+        easy_low_ent_idx = easy_data.sort_values('entropy', ascending=True).head(mixup_size//2)['idx'].tolist()
+        easy_high_ent_idx = easy_data.sort_values('entropy', ascending=False).head(mixup_size//2)['idx'].tolist()
         
         easy_mixup_data = easy_data[easy_data['idx'].isin(easy_low_ent_idx)].reset_index(drop=True)
         random.shuffle(easy_high_ent_idx)
@@ -70,8 +138,8 @@ def prepare_dataset(data, info_data=None, mixup=False):
         
         # Ambi-Ambi Mixup
         ambiguous_data = data[data['category'] == 'ambiguous']
-        ambiguous_low_ent_idx = ambiguous_data.sort_values('entropy', ascending=True).head(mixup_size//3)['idx'].tolist()
-        ambiguous_high_ent_idx = ambiguous_data.sort_values('entropy', ascending=False).head(mixup_size//3)['idx'].tolist()
+        ambiguous_low_ent_idx = ambiguous_data.sort_values('entropy', ascending=True).head(mixup_size//2)['idx'].tolist()
+        ambiguous_high_ent_idx = ambiguous_data.sort_values('entropy', ascending=False).head(mixup_size//2)['idx'].tolist()
         
         ambiguous_mixup_data = ambiguous_data[ambiguous_data['idx'].isin(ambiguous_low_ent_idx)].reset_index(drop=True)
         random.shuffle(ambiguous_high_ent_idx)
@@ -81,30 +149,10 @@ def prepare_dataset(data, info_data=None, mixup=False):
         ambiguous_mixup_data['category_2'] = ambiguous_mixup_data['idx_2'].apply(lambda x: ambiguous_data[ambiguous_data['idx'] == x]['category'].values[0])
         ambiguous_mixup_data['mixup_type'] = 'same_ambiguous'
         
-        same_mixup_data = pd.concat([easy_mixup_data, ambiguous_mixup_data])
-        
-        # --------------------------------------- Different class mixup ---------------------------------------  
-        
-        # Random easy-ambi mixup
-        different_samples = mixup_size - len(same_mixup_data)
-        easy_tuple = list(zip(easy_data['idx'].tolist(), easy_data['text'].tolist(), easy_data['label'].tolist(), easy_data['category'].tolist()))
-        ambiguous_tuple = list(zip(ambiguous_data['idx'].tolist(), ambiguous_data['text'].tolist(), ambiguous_data['label'].tolist(), ambiguous_data['category'].tolist()))
-        
-        easy_data = easy_data.sample(n=different_samples//2).reset_index(drop=True)
-        ambiguous4easy = random.choices(ambiguous_tuple, weights=np.ones(len(ambiguous_tuple)), k=different_samples//2)
-        ambiguous4easy = pd.DataFrame(ambiguous4easy, columns=['idx_2', 'text_2', 'label_2', 'category_2'])
-        ambiguous4easy = pd.concat([easy_data, ambiguous4easy], axis=1).reset_index(drop=True)
-        ambiguous4easy['mixup_type'] = 'ambiguous_easy'
-        
-        ambiguous_data = ambiguous_data.sample(n=different_samples//2).reset_index(drop=True)
-        easy4ambiguous = random.choices(easy_tuple, weights=np.ones(len(easy_tuple)), k=different_samples//2)
-        easy4ambiguous = pd.DataFrame(easy4ambiguous, columns=['idx_2', 'text_2', 'label_2', 'category_2'])
-        easy4ambiguous = pd.concat([ambiguous_data, easy4ambiguous], axis=1).reset_index(drop=True)
-        easy4ambiguous['mixup_type'] = 'easy_ambiguous'
-        
-        return pd.concat([same_mixup_data, easy4ambiguous, ambiguous4easy]).sample(frac=1).reset_index(drop=True)
-
+        return pd.concat([easy_mixup_data, ambiguous_mixup_data]).sample(frac=1).reset_index(drop=True)
+    
     return data
+        
 
 
 class MixupDataset(Dataset):
@@ -175,6 +223,7 @@ class MixupDataset(Dataset):
 # --------------------------------------------------- Train Utils ---------------------------------------------------
 
 def get_optimizer(model):
+    # return optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     decay = []
     no_decay = []
     skip_params = ['LayerNorm', 'bias']
@@ -202,11 +251,11 @@ def train(model, tokenizer, device, train_data, eval_data, arguments):
         SHUFFLE = True
 
     # Saving path
-    SAVE_PATH = f'../output/roberta_ckpts_mixup_{arguments.sampling_type}_{arguments.task_name}/'
-    FNAME = f'roberta_mixup_{arguments.sampling_type}_{arguments.task_name}'
+    SAVE_PATH = f'../output/roberta_ckpts_mixup_{arguments.sampling_type}_{arguments.task_name}_same/'
+    FNAME = f'roberta_mixup_{arguments.sampling_type}_{arguments.task_name}_same'
     if not os.path.exists(SAVE_PATH):
         os.makedirs(SAVE_PATH)
-    OUTPUT_DIR = f'../model_checkpoints/roberta_ckpts_mixup_{arguments.sampling_type}_{arguments.task_name}'
+    OUTPUT_DIR = f'../model_checkpoints/roberta_ckpts_mixup_{arguments.sampling_type}_{arguments.task_name}_same'
     print(f"\n\nSAVE_PATH: {SAVE_PATH}")
     print(f"\OUTPUT_DIR: {OUTPUT_DIR}")
 
@@ -233,7 +282,6 @@ def train(model, tokenizer, device, train_data, eval_data, arguments):
     for epoch in train_iterator:
         
         model.train()
-        optimizer.zero_grad()
 
         if epoch + 1 == MIXUP_START:
             del train_data_processed
@@ -262,6 +310,8 @@ def train(model, tokenizer, device, train_data, eval_data, arguments):
             inputs = {k:v.to(device) for k, v in batch.items()}
             labels = inputs['labels']
             
+            optimizer.zero_grad()
+
             outputs = model(**inputs)
             out = outputs['logits'].double().to(device)
             loss = outputs['loss']
