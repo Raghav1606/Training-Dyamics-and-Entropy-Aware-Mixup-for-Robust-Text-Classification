@@ -21,6 +21,7 @@ import argparse
 import numpy as np
 import pandas as pd
 import random
+import gc
 
 import torch
 import torch.nn as nn
@@ -45,7 +46,7 @@ from config import *
 def prepare_dataset(data, mixup=False, sampling_type='random'):
     
     # Remove none and hard examples
-    data = data[(data['category'] != 'none') & (data['category'] != 'hard')].reset_index(drop=True)[:5000]
+    data = data[(data['category'] != 'none') & (data['category'] != 'hard')].reset_index(drop=True)
     
     if not mixup:
         if sampling_type == 'sequential':
@@ -166,7 +167,7 @@ class MixupDataset(Dataset):
 
 # --------------------------------------------------- Train Utils ---------------------------------------------------
 
-def train(model, tokenizer, optimizer, device, train_data, sampling_type, shuffle, num_epochs, output_dir):
+def train(model, tokenizer, optimizer, device, train_data, eval_data, sampling_type, shuffle, num_epochs, output_dir, save_path, fname):
     
     train_data_processed = prepare_dataset(train_data, mixup=False, sampling_type=sampling_type)
     train_dataset = MixupDataset(data=train_data_processed, dataset_type='train', tokenizer=tokenizer)
@@ -174,20 +175,28 @@ def train(model, tokenizer, optimizer, device, train_data, sampling_type, shuffl
     print(f"\n\nNormal train data size: {len(train_data_processed)}")
     print(f"Normal train_loader size: {len(train_loader)}\n\n")
 
-    model.train()
+    eval_dataset = MixupDataset(data=eval_data, dataset_type='eval', tokenizer=tokenizer)
+    eval_loader = DataLoader(eval_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    print(f"\n\nEval data size: {len(eval_data)}")
+    print(f"eval_loader size: {len(eval_loader)}")
+
     losses = []
+    val_losses = []
     train_iterator = trange(int(num_epochs), desc='Epoch')
     for epoch in train_iterator:
         
+        model.train()
         if epoch + 1 == MIXUP_START:
             del train_data_processed
             del train_dataset
             del train_loader
-            del epoch_iterator
+            # del epoch_iterator
+            gc.collect()
+            torch.cuda.empty_cache()
 
             train_data_processed = prepare_dataset(train_data, mixup=True, sampling_type=sampling_type)
             train_dataset = MixupDataset(data=train_data_processed, dataset_type='mixup', tokenizer=tokenizer)
-            train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=shuffle)
+            train_loader = DataLoader(train_dataset, batch_size=4, shuffle=shuffle)
             print(f"\n\nMixup train data size: {len(train_data_processed)}")
             print(f"Mixup train_loader size: {len(train_loader)}\n\n")
 
@@ -212,11 +221,24 @@ def train(model, tokenizer, optimizer, device, train_data, sampling_type, shuffl
         losses.append(tr_loss/(step+1))
         print('\ntrain loss: {}'.format(tr_loss/(step+1)))
 
-    # save model and tokenizer
-    print('Saving model and tokenizer')
+        # evaluate model
+        if eval_loader is not None:
+            print('\n\nEvaluating model')
+            probs, val_loss = eval(model, eval_loader, device, with_labels=True)
 
-    model.save_pretrained(output_dir)
-    tokenizer.save_pretrained(output_dir)
+            if epoch == 0 or val_loss  < min(val_losses):
+                print('\n\nSaving model and tokenizer..')
+                model.save_pretrained(output_dir)
+                tokenizer.save_pretrained(output_dir)
+
+                print("\n\nSaving eval results...")
+                np.save(os.path.join(save_path, f'{fname}_probs'), probs)
+                msp = np.max(probs, axis=1)
+                if fname is not None:
+                    np.save(os.path.join(save_path, f'{fname}_msp'), msp)
+
+            val_losses.append(val_loss)
+    # save model and tokenizer
 
 
 
@@ -261,7 +283,7 @@ def eval(model, eval_loader, device, with_labels=True):
         accuracy = np.sum(preds == gold_labels)/len(preds)
         print('eval accuracy: {}'.format(accuracy))
 
-    return probs
+    return probs, eval_loss
 
 
 
@@ -275,10 +297,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--task_name', help='Task to fine-tune RoBERTa on', default='sst2')
     parser.add_argument('--roberta_version', type=str, default='roberta-base', help='Version of RoBERTa to use')
-    parser.add_argument('--num_epochs', type=int, default=3, help='Number of epochs to fine-tune')
-    parser.add_argument('--max_seq_length', type=int, default=None, help='Maximum sequence length of the inputs')
-    parser.add_argument('--batch_size', type=int, default=16, help='Batch size')
-    parser.add_argument('--learning_rate', type=float, default=1e-5, help='Adam learning rate')
     parser.add_argument('--device', type=int, default=0, help='which GPU to use')
     parser.add_argument('--sampling_type', type=str, default='random', help='How to sample data')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for initialization')
@@ -319,7 +337,7 @@ def main():
     model.resize_token_embeddings(len(tokenizer))
 
     # process dataset
-    print('\n\nProcessing dataset\n')
+    print('\n\nReading dataset\n')
 
     # Process train dataset
     train_file = f'../datasets/{args.task_name}/{args.task_name}_categorized.csv'
@@ -327,28 +345,30 @@ def main():
     
     # Process eval dataset
     val_file = f'../datasets/{args.task_name}/test.csv'
-    eval_df = pd.read_csv(val_file)[:100]
-    print(f"Test data size: {len(eval_df)}")
-    eval_dataset = MixupDataset(data=eval_df, dataset_type='eval', tokenizer=tokenizer)
-    eval_loader = DataLoader(eval_dataset, batch_size=BATCH_SIZE, shuffle=False)
-    print(f"eval_loader size: {len(eval_loader)}")
+    eval_df = pd.read_csv(val_file)
 
     # instantiate optimizer
-    optimizer = optim.AdamW(model.parameters(), lr=args.learning_rate)
+    decay = []
+    no_decay = []
+    skip_params = ['LayerNorm', 'bias']
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue
+        elif len(param.shape) == 1 or name in skip_params:
+            print(name)
+            no_decay.append(param)
+        else:
+            decay.append(param)
+
+    optimizer = optim.AdamW([
+        {'params': no_decay, 'lr': LEARNING_RATE, 'weight_decay': 0.0},
+        {'params': decay, 'lr': LEARNING_RATE, 'weight_decay': WEIGHT_DECAY}
+    ])
 
     # fine-tune model 
     if train_df is not None:
-        print('\n\nFine-tuning model')
-        train(model, tokenizer, optimizer, device, train_df, args.sampling_type, SHUFFLE, NUM_EPOCHS, OUTPUT_DIR)
-
-    # evaluate model
-    if eval_loader is not None:
-        print('\n\nEvaluating model')
-        probs = eval(model, eval_loader, device, with_labels=True)
-        np.save(os.path.join(SAVE_PATH, f'{FNAME}_probs'), probs)
-        msp = np.max(probs, axis=1)
-        if FNAME is not None:
-            np.save(os.path.join(SAVE_PATH, f'{FNAME}_msp'), msp)
+        print('\nFine-tuning model')
+        train(model, tokenizer, optimizer, device, train_df, eval_df, args.sampling_type, SHUFFLE, NUM_EPOCHS, OUTPUT_DIR, SAVE_PATH, FNAME)
 
 
 if __name__ == '__main__':

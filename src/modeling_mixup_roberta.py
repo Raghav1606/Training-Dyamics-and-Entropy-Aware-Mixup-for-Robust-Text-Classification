@@ -18,7 +18,7 @@ from transformers.modeling_outputs import (
     SequenceClassifierOutput
 )
 
-from config import *
+from config import LAMBDA, FLAG
 
 
 class RobertaMixerEncoder(nn.Module):
@@ -364,7 +364,7 @@ class RobertaMixerForSequenceClassification(RobertaPreTrainedModel):
             )
             sequence_output_2 = outputs_2[0]
 
-            sequence_output = (LAMBDA * sequence_output_1) + ((1 - LAMBDA) * sequence_output_2)
+            sequence_output = (LAMBDA * sequence_output_1) + ((1.0 - LAMBDA) * sequence_output_2)
 
             if FLAG:
                 sequence_output = self.mixup_dense(sequence_output)

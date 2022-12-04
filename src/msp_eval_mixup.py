@@ -1,5 +1,5 @@
 '''
-python msp_eval_mixup.py \
+python3 msp_eval_mixup.py \
 --model_path ../model_checkpoints/roberta_ckpts_mixup_random_imdb \
 --dataset_name sst2 
 '''
@@ -112,7 +112,7 @@ def main(model_path, val_file=None, dataset_name=None, dataset_config_name=None,
     probs = eval(model, dataloader, device, with_labels=with_labels)
     end_time = time.time()
     print("MSP runtime:", end_time - start_time)
-    FNAME = f"{str(args.model_path.split('/')[-1]).replace('roberta_ckpts_', '')}_{args.dataset_name}"
+    FNAME = f"{str(model_path.split('/')[-1]).replace('roberta_ckpts_', '')}_{dataset_name}"
     np.save(os.path.join(SAVE_PATH, f'{FNAME}_probs'), probs)
     if save_msp:
         msp = np.max(probs, axis=1)
