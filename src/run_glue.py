@@ -121,11 +121,11 @@ def parse_args():
     parser.add_argument(
         "--learning_rate",
         type=float,
-        default=5e-5,
+        default=2e-5,
         help="Initial learning rate (after the potential warmup period) to use.",
     )
     parser.add_argument("--weight_decay", type=float, default=0.0, help="Weight decay to use.")
-    parser.add_argument("--num_train_epochs", type=int, default=3, help="Total number of training epochs to perform.")
+    parser.add_argument("--num_train_epochs", type=int, default=5, help="Total number of training epochs to perform.")
     parser.add_argument(
         "--max_train_steps",
         type=int,
@@ -283,8 +283,10 @@ def main():
                 raw_datasets['train'] = raw_datasets['train'].add_column('idx',ids)
             num_labels = raw_datasets['train'].features['label'].num_classes
             print("num_labels =", num_labels)
+        print(raw_datasets)
     
     else:
+        
         # Loading the dataset from local csv or json file.
         data_files = {}
         if args.train_file is not None:
@@ -292,7 +294,13 @@ def main():
         if args.validation_file is not None:
             data_files["validation"] = args.validation_file
         extension = (args.train_file if args.train_file is not None else args.validation_file).split(".")[-1]
+        print(extension)
         raw_datasets = load_dataset(extension, data_files=data_files)
+        # raw_datasets['train'] = raw_datasets['train'].applymap(str)
+        ids = list(range(len(raw_datasets['train'])))
+        if(args.task_name != 'sst2'):
+            raw_datasets['train'] = raw_datasets['train'].add_column('idx',ids)
+        print(raw_datasets)
     # See more about loading any type of standard or custom dataset at
     # https://huggingface.co/docs/datasets/loading_datasets.html.
 
@@ -344,13 +352,14 @@ def main():
         # 然后希望你有`sentence1`, `sentence2`这两个字段，这样就跟glue对齐了
         # 如果你也不是用的这个名字，那就选择非label列的前两个字段来分别作为sentence1和sentence2
         non_label_column_names = [name for name in raw_datasets["train"].column_names if name != "label"]
+        # print(f"non_label_column_names: {non_label_column_names}")
         if "sentence1" in non_label_column_names and "sentence2" in non_label_column_names:
             sentence1_key, sentence2_key = "sentence1", "sentence2"
         else:
-            if len(non_label_column_names) >= 2:
-                sentence1_key, sentence2_key = non_label_column_names[:2]
-            else:
-                sentence1_key, sentence2_key = non_label_column_names[0], None
+            # if len(non_label_column_names) >= 2:
+            #     sentence1_key, sentence2_key = non_label_column_names[:2]
+            # else:
+            sentence1_key, sentence2_key = non_label_column_names[0], None
 
     # Some models have set the order of the labels to use, so let's make sure we do use it.
     label_to_id = None
@@ -387,9 +396,12 @@ def main():
 
     def preprocess_function(examples):
         # Tokenize the texts
+        # print("examples: \n", examples)
+        # print("\n\nKeys: ", sentence1_key, sentence2_key)
         texts = (
             (examples[sentence1_key],) if sentence2_key is None else (examples[sentence1_key], examples[sentence2_key])
         )
+        # print("\n\ntexts: \n", texts)
         result = tokenizer(*texts, padding=padding, max_length=args.max_length, truncation=True)
 
         if "label" in examples:
@@ -401,6 +413,7 @@ def main():
                 result["labels"] = examples["label"]
         return result
 
+    print("\n\nTrain dataset: \n\n", raw_datasets['train'])
     with accelerator.main_process_first():
         processed_datasets = raw_datasets.map(
             preprocess_function,
@@ -414,7 +427,10 @@ def main():
         )
 
     train_dataset = processed_datasets["train"]
-    eval_dataset = processed_datasets["validation" if args.task_name == "sst2" else "test"]
+    if args.validation_file != None:
+        eval_dataset = processed_datasets["validation"]
+    else: 
+        eval_dataset = processed_datasets["validation" if args.task_name == "sst2" else "test"]
 
     # Log a few random samples from the training set:
     for index in random.sample(range(len(train_dataset)), 3):
@@ -500,7 +516,8 @@ def main():
     #     metric = load_metric(args.task_name)
     # else:
         metric = load_metric("accuracy")
-
+    else: 
+        metric = load_metric("accuracy")
     # Train!
     total_batch_size = args.per_device_train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
 
@@ -540,16 +557,18 @@ def main():
     # ============================ Training Loop ============================
     for epoch in range(starting_epoch, args.num_train_epochs):
         if accelerator.is_main_process:
-            if not os.path.exists(f'dy_log/{args.task_name}/'):
-                os.mkdir(f'dy_log/{args.task_name}/')
-            if not os.path.exists(f'dy_log/{args.task_name}/{args.model_name_or_path}'):
-                os.mkdir(f'dy_log/{args.task_name}/{args.model_name_or_path}')
-            log_path = f'dy_log/{args.task_name}/{args.model_name_or_path}/training_dynamics/'
+            if(args.task_name == None):
+                args.task_name = "spam" #change
+            if not os.path.exists(f'../dy_log/{args.task_name}/'):
+                os.mkdir(f'../dy_log/{args.task_name}/')
+            if not os.path.exists(f'../dy_log/{args.task_name}/{args.model_name_or_path}'):
+                os.mkdir(f'../dy_log/{args.task_name}/{args.model_name_or_path}')
+            log_path = f'../dy_log/{args.task_name}/{args.model_name_or_path}/training_dynamics/'
             if not os.path.exists(log_path):
                 os.mkdir(log_path)
         
         accelerator.wait_for_everyone() # 只在 main process 里面创建文件夹，然后让其他 process 等待 main process 创建完毕
-        log_path = f'dy_log/{args.task_name}/{args.model_name_or_path}/training_dynamics/'
+        log_path = f'../dy_log/{args.task_name}/{args.model_name_or_path}/training_dynamics/'
         print('-*-*-*- ',log_path, os.path.exists(log_path),accelerator.device)
 
         model.train()
