@@ -4,15 +4,16 @@
 '''
 
 nohup python3 -u roberta_mixup_fine_tune.py \
---task_name imdb \
+--task_name sarcasm \
 --roberta_version roberta-base \
---sampling_type random \
---device 1 > ../out_files/modeling_mixup_roberta_imdb_random_same.out &
+--mixup_type random \
+--mixup_use_label \
+--device 1 > ../out_files/modeling_mixup_roberta_sarcasm_random_use_label.out &
 
 python3 roberta_mixup_fine_tune.py \
 --task_name imdb \
 --roberta_version roberta-base \
---sampling_type random \
+--mixup_type random \
 --device 0
 
 '''
@@ -43,6 +44,7 @@ from transformers import (
 )
 from modeling_mixup_roberta import RobertaMixerForSequenceClassification
 from config import *
+from mixup_data_utils import *
 
 # --------------------------------------------------- MixupDataset Class ---------------------------------------------------
 
@@ -111,47 +113,47 @@ from config import *
 
 
 
-def prepare_dataset(data, info_data=None, mixup=False):
+# def prepare_dataset(data, info_data=None, mixup=False):
     
-    # Remove none and hard examples
-    data = data[(data['category'] != 'none') & (data['category'] != 'hard')].reset_index(drop=True)
+#     # Remove none and hard examples
+#     data = data[(data['category'] != 'none') & (data['category'] != 'hard')].reset_index(drop=True)
 
-    # Add softmax and entropy info
-    if (info_data is not None) and mixup:
-        data = pd.merge(data, info_data, on='idx')[['idx', 'text', 'label', 'category', 'softmax', 'entropy']]
-        mixup_size = len(info_data) - len(data)
+#     # Add softmax and entropy info
+#     if (info_data is not None) and mixup:
+#         data = pd.merge(data, info_data, on='idx')[['idx', 'text', 'label', 'category', 'softmax', 'entropy']]
+#         mixup_size = len(info_data) - len(data)
 
-        # --------------------------------------- Same class mixup ---------------------------------------  
+#         # --------------------------------------- Same class mixup ---------------------------------------  
 
-        # Easy-Easy Mixup
-        easy_data = data[data['category'] == 'easy']
-        easy_low_ent_idx = easy_data.sort_values('entropy', ascending=True).head(mixup_size//2)['idx'].tolist()
-        easy_high_ent_idx = easy_data.sort_values('entropy', ascending=False).head(mixup_size//2)['idx'].tolist()
+#         # Easy-Easy Mixup
+#         easy_data = data[data['category'] == 'easy']
+#         easy_low_ent_idx = easy_data.sort_values('entropy', ascending=True).head(mixup_size//2)['idx'].tolist()
+#         easy_high_ent_idx = easy_data.sort_values('entropy', ascending=False).head(mixup_size//2)['idx'].tolist()
         
-        easy_mixup_data = easy_data[easy_data['idx'].isin(easy_low_ent_idx)].reset_index(drop=True)
-        random.shuffle(easy_high_ent_idx)
-        easy_mixup_data['idx_2'] = easy_high_ent_idx
-        easy_mixup_data['text_2'] = easy_mixup_data['idx_2'].apply(lambda x: easy_data[easy_data['idx'] == x]['text'].values[0])
-        easy_mixup_data['label_2'] = easy_mixup_data['idx_2'].apply(lambda x: easy_data[easy_data['idx'] == x]['label'].values[0])
-        easy_mixup_data['category_2'] = easy_mixup_data['idx_2'].apply(lambda x: easy_data[easy_data['idx'] == x]['category'].values[0])
-        easy_mixup_data['mixup_type'] = 'same_easy'
+#         easy_mixup_data = easy_data[easy_data['idx'].isin(easy_low_ent_idx)].reset_index(drop=True)
+#         random.shuffle(easy_high_ent_idx)
+#         easy_mixup_data['idx_2'] = easy_high_ent_idx
+#         easy_mixup_data['text_2'] = easy_mixup_data['idx_2'].apply(lambda x: easy_data[easy_data['idx'] == x]['text'].values[0])
+#         easy_mixup_data['label_2'] = easy_mixup_data['idx_2'].apply(lambda x: easy_data[easy_data['idx'] == x]['label'].values[0])
+#         easy_mixup_data['category_2'] = easy_mixup_data['idx_2'].apply(lambda x: easy_data[easy_data['idx'] == x]['category'].values[0])
+#         easy_mixup_data['mixup_type'] = 'same_easy'
         
-        # Ambi-Ambi Mixup
-        ambiguous_data = data[data['category'] == 'ambiguous']
-        ambiguous_low_ent_idx = ambiguous_data.sort_values('entropy', ascending=True).head(mixup_size//2)['idx'].tolist()
-        ambiguous_high_ent_idx = ambiguous_data.sort_values('entropy', ascending=False).head(mixup_size//2)['idx'].tolist()
+#         # Ambi-Ambi Mixup
+#         ambiguous_data = data[data['category'] == 'ambiguous']
+#         ambiguous_low_ent_idx = ambiguous_data.sort_values('entropy', ascending=True).head(mixup_size//2)['idx'].tolist()
+#         ambiguous_high_ent_idx = ambiguous_data.sort_values('entropy', ascending=False).head(mixup_size//2)['idx'].tolist()
         
-        ambiguous_mixup_data = ambiguous_data[ambiguous_data['idx'].isin(ambiguous_low_ent_idx)].reset_index(drop=True)
-        random.shuffle(ambiguous_high_ent_idx)
-        ambiguous_mixup_data['idx_2'] = ambiguous_high_ent_idx
-        ambiguous_mixup_data['text_2'] = ambiguous_mixup_data['idx_2'].apply(lambda x: ambiguous_data[ambiguous_data['idx'] == x]['text'].values[0])
-        ambiguous_mixup_data['label_2'] = ambiguous_mixup_data['idx_2'].apply(lambda x: ambiguous_data[ambiguous_data['idx'] == x]['label'].values[0])
-        ambiguous_mixup_data['category_2'] = ambiguous_mixup_data['idx_2'].apply(lambda x: ambiguous_data[ambiguous_data['idx'] == x]['category'].values[0])
-        ambiguous_mixup_data['mixup_type'] = 'same_ambiguous'
+#         ambiguous_mixup_data = ambiguous_data[ambiguous_data['idx'].isin(ambiguous_low_ent_idx)].reset_index(drop=True)
+#         random.shuffle(ambiguous_high_ent_idx)
+#         ambiguous_mixup_data['idx_2'] = ambiguous_high_ent_idx
+#         ambiguous_mixup_data['text_2'] = ambiguous_mixup_data['idx_2'].apply(lambda x: ambiguous_data[ambiguous_data['idx'] == x]['text'].values[0])
+#         ambiguous_mixup_data['label_2'] = ambiguous_mixup_data['idx_2'].apply(lambda x: ambiguous_data[ambiguous_data['idx'] == x]['label'].values[0])
+#         ambiguous_mixup_data['category_2'] = ambiguous_mixup_data['idx_2'].apply(lambda x: ambiguous_data[ambiguous_data['idx'] == x]['category'].values[0])
+#         ambiguous_mixup_data['mixup_type'] = 'same_ambiguous'
         
-        return pd.concat([easy_mixup_data, ambiguous_mixup_data]).sample(frac=1).reset_index(drop=True)
+#         return pd.concat([easy_mixup_data, ambiguous_mixup_data]).sample(frac=1).reset_index(drop=True)
     
-    return data
+#     return data
         
 
 
@@ -243,26 +245,20 @@ def get_optimizer(model):
 
 
 def train(model, tokenizer, device, train_data, eval_data, arguments):
-    
-     # Shuffling decision
-    if arguments.sampling_type == 'sequential' or arguments.sampling_type == 'suby':
-        SHUFFLE = False
-    else:
-        SHUFFLE = True
 
     # Saving path
-    SAVE_PATH = f'../output/roberta_ckpts_mixup_{arguments.sampling_type}_{arguments.task_name}_same/'
-    FNAME = f'roberta_mixup_{arguments.sampling_type}_{arguments.task_name}_same'
+    SAVE_PATH = f'../output/roberta_ckpts_mixup_{arguments.mixup_type}_{arguments.task_name}/'
+    FNAME = f'roberta_mixup_{arguments.mixup_type}_{arguments.task_name}'
     if not os.path.exists(SAVE_PATH):
         os.makedirs(SAVE_PATH)
-    OUTPUT_DIR = f'../model_checkpoints/roberta_ckpts_mixup_{arguments.sampling_type}_{arguments.task_name}_same'
+    OUTPUT_DIR = f'../model_checkpoints/roberta_ckpts_mixup_{arguments.mixup_type}_{arguments.task_name}'
     print(f"\n\nSAVE_PATH: {SAVE_PATH}")
     print(f"\OUTPUT_DIR: {OUTPUT_DIR}")
 
     # Process train dataset
-    train_data_processed = prepare_dataset(train_data, mixup=False)
+    train_data_processed = prepare_dataset_original(train_data, include_none=False)
     train_dataset = MixupDataset(data=train_data_processed, dataset_type='train', tokenizer=tokenizer)
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=SHUFFLE)
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     print(f"\n\nNormal train data size: {len(train_data_processed)}")
     print(f"Normal train_loader size: {len(train_loader)}\n\n")
 
@@ -294,12 +290,20 @@ def train(model, tokenizer, device, train_data, eval_data, arguments):
             info_df = pd.read_csv(f'../dy_log/{arguments.task_name}/roberta-base/training_dynamics/final_4.csv')
             info_df = info_df.rename(columns={'guid': 'idx', 'sm': 'softmax', 'en': 'entropy'})
 
-            train_data_processed = prepare_dataset(train_data, info_data=info_df, mixup=True)
+            if arguments.mixup_type == 'random':
+                print("\n\nRandom mixup processing...\n")
+                train_data_processed = prepare_dataset_random_mixup(train_data, info_data=info_df, use_label=arguments.mixup_use_label)
+            elif arguments.mixup_type == 'category':
+                print("\n\nCategory-based mixup processing...\n")
+                train_data_processed = prepare_dataset_category_mixup(train_data, info_data=info_df, use_label=arguments.mixup_use_label)
+
             train_dataset = MixupDataset(data=train_data_processed, dataset_type='mixup', tokenizer=tokenizer)
 
             grad_acc_step = 2
-            train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE//grad_acc_step, shuffle=SHUFFLE)
+            train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE//grad_acc_step, shuffle=True)
             print(f"\n\nMixup train data size: {len(train_data_processed)}")
+            print("Mixup label distribution: ")
+            get_count(train_data_processed, 'label', 'category')  
             print(f"Mixup train_loader size: {len(train_loader)}\n\n")
 
         tr_loss = 0
@@ -403,7 +407,8 @@ def main():
     parser.add_argument('--task_name', help='Task to fine-tune RoBERTa on', default='sst2')
     parser.add_argument('--roberta_version', type=str, default='roberta-base', help='Version of RoBERTa to use')
     parser.add_argument('--device', type=int, default=0, help='which GPU to use')
-    parser.add_argument('--sampling_type', type=str, default='random', help='How to sample data')
+    parser.add_argument('--mixup_type', type=str, default='random', help='How to sample data', choices=('random', 'category'))
+    parser.add_argument('--mixup_use_label', action='store_true', help='Do mixup of same labels')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for initialization')
     parser.add_argument('--file_format', type=str, default='.tsv', help='Data file format for tasks not available for download at HuggingFace Datasets')
     args = parser.parse_args()
