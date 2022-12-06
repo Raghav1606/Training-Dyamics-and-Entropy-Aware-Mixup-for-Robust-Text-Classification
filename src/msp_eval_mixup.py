@@ -1,6 +1,6 @@
 '''
 python3 msp_eval_mixup.py \
---model_path ../model_checkpoints/roberta_ckpts_mixup_random_imdb \
+--model_path ../model_checkpoints/roberta_ckpts_mixup_random_imdb_original_plus_full_mixup \
 --dataset_name sst2 
 '''
 
