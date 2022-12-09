@@ -8,9 +8,17 @@ nohup python3 -u roberta_mixup_fine_tune.py \
 --roberta_version roberta-base \
 --include_none \
 --mixup_type category \
---mixup_use_entropy \
 --mixup_use_label \
---device 1 > ../out_files/sarcasm/modeling_roberta_mixup_use_none_category_use_label_use_entropy_sarcasm.out &
+--mixup_use_entropy \
+--device 0 > ../out_files/sarcasm/modeling_roberta_mixup_use_none_category_use_label_use_entropy_sarcasm_flag_elu_jsd_weighted_sampling.out &
+
+nohup python3 -u roberta_mixup_fine_tune.py \
+--task_name sarcasm \
+--roberta_version roberta-base \
+--include_none \
+--mixup_type category \
+--mixup_use_label \
+--device 1 > ../out_files/sarcasm/modeling_roberta_non_easy_ambi.out &
 
 python3 roberta_mixup_fine_tune.py \
 --task_name imdb \
@@ -34,7 +42,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import (
     Dataset, 
-    DataLoader
+    DataLoader,
+    WeightedRandomSampler
 )
 
 from sklearn.metrics import (
@@ -144,6 +153,19 @@ def get_optimizer(model):
 
 
 
+def get_class_weights(df, column_label):
+    column_label_dict = {k: i for i, k in enumerate(df[column_label].unique().tolist())}
+    print("column_label_dict: ", column_label_dict)
+    df['integer'] = df[column_label].apply(lambda x: column_label_dict[x])
+    target_list = torch.tensor(df.integer)
+    class_count = np.bincount(df.integer)
+    class_weights = 1./torch.tensor(class_count, dtype=torch.float)
+    class_weights_all = class_weights[target_list]
+    
+    return class_weights_all
+
+
+
 def train(model, tokenizer, device, train_data, eval_data, arguments):
 
     # Saving path
@@ -167,8 +189,17 @@ def train(model, tokenizer, device, train_data, eval_data, arguments):
 
     # Process train dataset
     train_data_processed = prepare_dataset_original(train_data, include_none=arguments.include_none)
+    
+    CLASS_WEIGHTS = get_class_weights(train_data_processed, column_label='category')
+    print("\n\nCLASS_WEIGHTS size: ", len(CLASS_WEIGHTS))
+    weighted_sampler = WeightedRandomSampler(
+            weights=CLASS_WEIGHTS,
+            num_samples=len(CLASS_WEIGHTS),
+            replacement=True
+        )  
+
     train_dataset = MixupDataset(data=train_data_processed, dataset_type='train', tokenizer=tokenizer)
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=weighted_sampler, shuffle=False)
     print(f"\n\nNormal train data size: {len(train_data_processed)}")
     print(f"Normal train_loader size: {len(train_loader)}\n\n")
 
@@ -202,15 +233,23 @@ def train(model, tokenizer, device, train_data, eval_data, arguments):
 
             if arguments.mixup_type == 'random':
                 print("\n\nRandom mixup processing...\n")
-                train_data_processed = prepare_dataset_random_mixup(train_data, info_data=info_df, use_label=arguments.mixup_use_label)
+                train_data_processed = prepare_dataset_random_mixup(train_data, info_data=info_df, include_none=arguments.include_none, use_label=arguments.mixup_use_label)
             elif arguments.mixup_type == 'category':
                 print("\n\nCategory-based mixup processing...\n")
-                train_data_processed = prepare_dataset_category_mixup(train_data, info_data=info_df, use_label=arguments.mixup_use_label, use_entropy=arguments.mixup_use_entropy)
+                train_data_processed = prepare_dataset_category_mixup(train_data, info_data=info_df, include_none=arguments.include_none, use_label=arguments.mixup_use_label, use_entropy=arguments.mixup_use_entropy)
+
+            MIXUP_CLASS_WEIGHTS = get_class_weights(train_data_processed, column_label='mixup_type')
+            print("\n\nCLASS_WEIGHTS size: ", len(MIXUP_CLASS_WEIGHTS))
+            weighted_sampler = WeightedRandomSampler(
+                    weights=MIXUP_CLASS_WEIGHTS,
+                    num_samples=len(MIXUP_CLASS_WEIGHTS),
+                    replacement=True
+                )  
 
             train_dataset = MixupDataset(data=train_data_processed, dataset_type='mixup', tokenizer=tokenizer)
 
             grad_acc_step = 2
-            train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE//grad_acc_step, shuffle=True)
+            train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE//grad_acc_step, sampler=weighted_sampler, shuffle=False)
             print(f"\n\nMixup train data size: {len(train_data_processed)}")
             print("Mixup label distribution: ")
             get_count(train_data_processed, 'label', 'category')  
@@ -247,8 +286,8 @@ def train(model, tokenizer, device, train_data, eval_data, arguments):
 
             if epoch == 0 or val_loss  < min(val_losses):
                 print('\n\nSaving model and tokenizer..')
-                model.save_pretrained(OUTPUT_DIR)
-                tokenizer.save_pretrained(OUTPUT_DIR)
+                # model.save_pretrained(OUTPUT_DIR)
+                # tokenizer.save_pretrained(OUTPUT_DIR)
 
                 print("\n\nSaving eval results...")
                 np.save(os.path.join(SAVE_PATH, f'{FNAME}_probs'), probs)

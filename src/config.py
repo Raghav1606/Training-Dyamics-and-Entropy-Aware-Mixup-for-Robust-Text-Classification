@@ -1,9 +1,9 @@
 # Author: Atharva Kulkarni
 # Config file to train entropy-based mixup Roberta
 
-FLAG = False
-MIXUP_START = 3
-LAMBDA = 0.5
+FLAG = True
+MIXUP_START = 4
+UE_JSD = True
 
 INPUT_COLUMN = 'text'
 DATA_COLUMN = 'category'
@@ -21,6 +21,6 @@ print("OUTPUT_COLUMN: ", OUTPUT_COLUMN)
 print("NUM_EPOCHS: ", NUM_EPOCHS)
 print("MAX_LEN: ", MAX_LEN)
 print("BATCH_SIZE: ", BATCH_SIZE)
-print("LAMBDA: ", LAMBDA)
+print("UE_JSD: ", UE_JSD)
 print("FLAG: ", FLAG)
 print("MIXUP_START: ", MIXUP_START)

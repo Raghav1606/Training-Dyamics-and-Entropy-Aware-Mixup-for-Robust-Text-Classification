@@ -21,8 +21,9 @@ from transformers.modeling_outputs import (
     SequenceClassifierOutput
 )
 
-from config import LAMBDA, FLAG
-
+# from config import LAMBDA, FLAG
+from config import FLAG, UE_JSD
+import numpy as np
 
 class RobertaMixerEncoder(nn.Module):
     def __init__(self, config):
@@ -306,6 +307,7 @@ class RobertaMixerForSequenceClassification(RobertaPreTrainedModel):
         
         if FLAG:
             self.mixup_dense = nn.Linear(config.hidden_size, config.hidden_size)
+            self.activation = nn.ELU()
             self.mixup_layernorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
             self.mixup_dropout = nn.Dropout(config.hidden_dropout_prob)
 
@@ -367,10 +369,14 @@ class RobertaMixerForSequenceClassification(RobertaPreTrainedModel):
             )
             sequence_output_2 = outputs_2[0]
 
+            LAMBDA = np.random.beta(1.0, 1.0)
+            LAMBDA = max(LAMBDA, 1-LAMBDA)
+            # LAMBDA = 0.5
             sequence_output = (LAMBDA * sequence_output_1) + ((1.0 - LAMBDA) * sequence_output_2)
 
             if FLAG:
                 sequence_output = self.mixup_dense(sequence_output)
+                sequence_output = self.activation(sequence_output)
                 sequence_output = self.mixup_layernorm(sequence_output)
                 sequence_output = self.mixup_dropout(sequence_output)
 
@@ -380,6 +386,15 @@ class RobertaMixerForSequenceClassification(RobertaPreTrainedModel):
             loss_fct = nn.CrossEntropyLoss()
             loss = (LAMBDA * loss_fct(logits.view(-1, self.num_labels), labels.view(-1))) + ((1 - LAMBDA) * loss_fct(logits.view(-1, self.num_labels), labels_2.view(-1)))
 
+            if UE_JSD:
+                orig_outputs = self.classifier(sequence_output_1)
+
+                p_clean = F.softmax(orig_outputs, dim=1)
+                p_aug = F.softmax(logits, dim=1)
+                p_mixture = torch.clamp((p_clean + p_aug) / 2., 1e-7, 1).log()
+
+                loss += 8 * (F.kl_div(p_mixture, p_clean, reduction='batchmean') +
+                        F.kl_div(p_mixture, p_aug, reduction='batchmean')) / 2.   # coefficient = 8 
         # Mixup eval
         else:
             logits = self.classifier(sequence_output_1)
