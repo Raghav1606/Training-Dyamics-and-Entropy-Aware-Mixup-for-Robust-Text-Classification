@@ -1,0 +1,75 @@
+/projects/metis2/atharvak/miniconda3/envs/11711_env/lib/python3.10/site-packages/scipy/__init__.py:146: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.23.1
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion}"
+INPUT_COLUMN:  text
+DATA_COLUMN:  category
+OUTPUT_COLUMN:  label
+NUM_EPOCHS:  10
+MAX_LEN:  None
+BATCH_SIZE:  8
+UE_JSD:  False
+FLAG:  True
+MIXUP_START:  1
+
+
+This process has the PID:  16095
+
+
+Device: cuda:2
+
+
+Loading RoBERTa tokenizer and model
+Some weights of the model checkpoint at roberta-base were not used when initializing RobertaMixerForSequenceClassification: ['lm_head.dense.bias', 'roberta.pooler.dense.bias', 'lm_head.dense.weight', 'roberta.pooler.dense.weight', 'lm_head.decoder.weight', 'lm_head.bias', 'lm_head.layer_norm.bias', 'lm_head.layer_norm.weight']
+- This IS expected if you are initializing RobertaMixerForSequenceClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing RobertaMixerForSequenceClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of RobertaMixerForSequenceClassification were not initialized from the model checkpoint at roberta-base and are newly initialized: ['classifier.out_proj.weight', 'mixup_dense.bias', 'classifier.dense.weight', 'classifier.out_proj.bias', 'classifier.dense.bias', 'mixup_layernorm.weight', 'mixup_dense.weight', 'mixup_layernorm.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+
+
+Reading dataset
+
+
+Fine-tuning model
+
+
+SAVE_PATH: ../output/roberta_ckpts_mixup_True_category_use_label_use_entropy_sarcasm/
+\OUTPUT_DIR: ../model_checkpoints/roberta_ckpts_mixup_True_category_use_label_use_entropy_sarcasm
+
+
+Normal train data size: 3266
+Normal train_loader size: 409
+
+
+
+
+Eval data size: 1400
+eval_loader size: 175
+Epoch:   0%|          | 0/10 [00:00<?, ?it/s]
+
+Category-based mixup processing...
+
+
+
+Mixup train data size: 3266
+Mixup label distribution: 
+same label:  1.0
+same category:  1.0
+Mixup train_loader size: 817
+
+
+
+Training:   0%|          | 0/817 [00:00<?, ?it/s][ATraining:   0%|          | 0/817 [00:00<?, ?it/s]
+Epoch:   0%|          | 0/10 [00:02<?, ?it/s]
+Traceback (most recent call last):
+  File "/projects/metis2/atharvak/Data_Cartography/src/roberta_mixup_fine_tune.py", line 404, in <module>
+    main()
+  File "/projects/metis2/atharvak/Data_Cartography/src/roberta_mixup_fine_tune.py", line 400, in main
+    train(model, tokenizer, device, train_df, eval_df, args)
+  File "/projects/metis2/atharvak/Data_Cartography/src/roberta_mixup_fine_tune.py", line 273, in train
+    loss.backward()
+  File "/projects/metis2/atharvak/miniconda3/envs/11711_env/lib/python3.10/site-packages/torch/_tensor.py", line 396, in backward
+    torch.autograd.backward(self, gradient, retain_graph, create_graph, inputs=inputs)
+  File "/projects/metis2/atharvak/miniconda3/envs/11711_env/lib/python3.10/site-packages/torch/autograd/__init__.py", line 166, in backward
+    grad_tensors_ = _make_grads(tensors, grad_tensors_, is_grads_batched=False)
+  File "/projects/metis2/atharvak/miniconda3/envs/11711_env/lib/python3.10/site-packages/torch/autograd/__init__.py", line 67, in _make_grads
+    raise RuntimeError("grad can be implicitly created only for scalar outputs")
+RuntimeError: grad can be implicitly created only for scalar outputs
