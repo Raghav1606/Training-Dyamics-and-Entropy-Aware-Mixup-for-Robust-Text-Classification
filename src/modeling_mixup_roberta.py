@@ -307,7 +307,7 @@ class RobertaMixerForSequenceClassification(RobertaPreTrainedModel):
         
         if FLAG:
             self.mixup_dense = nn.Linear(config.hidden_size, config.hidden_size)
-            self.activation = nn.ELU()
+            self.activation = nn.GELU()
             self.mixup_layernorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
             self.mixup_dropout = nn.Dropout(config.hidden_dropout_prob)
 

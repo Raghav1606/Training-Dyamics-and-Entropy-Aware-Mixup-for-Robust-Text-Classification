@@ -289,11 +289,11 @@ def train(model, tokenizer, device, train_data, eval_data, arguments):
                 # model.save_pretrained(OUTPUT_DIR)
                 # tokenizer.save_pretrained(OUTPUT_DIR)
 
-                print("\n\nSaving eval results...")
-                np.save(os.path.join(SAVE_PATH, f'{FNAME}_probs'), probs)
-                msp = np.max(probs, axis=1)
-                if FNAME is not None:
-                    np.save(os.path.join(SAVE_PATH, f'{FNAME}_msp'), msp)
+                # print("\n\nSaving eval results...")
+                # np.save(os.path.join(SAVE_PATH, f'{FNAME}_probs'), probs)
+                # msp = np.max(probs, axis=1)
+                # if FNAME is not None:
+                #     np.save(os.path.join(SAVE_PATH, f'{FNAME}_msp'), msp)
 
             val_losses.append(val_loss)
     # save model and tokenizer
@@ -303,6 +303,16 @@ def train(model, tokenizer, device, train_data, eval_data, arguments):
 def eval(model, eval_loader, device, with_labels=True):
     probs = None
     gold_labels = None
+
+
+    SAVE_PATH = f'../results/{arguments.task_name}/'
+            f'roberta_mixup_{arguments.include_none}_{arguments.mixup_type}_{label}_{entropy}_{arguments.task_name}/'
+    FNAME = f'roberta_mixup_{arguments.include_none}_{arguments.mixup_type}_{label}_{entropy}_{arguments.task_name}'
+    if not os.path.exists(SAVE_PATH):
+        os.makedirs(SAVE_PATH)
+    OUTPUT_DIR = f'../model_checkpoints/roberta_ckpts_mixup_{arguments.include_none}_{arguments.mixup_type}_{label}_{entropy}_{arguments.task_name}'
+    print(f"\n\nSAVE_PATH: {SAVE_PATH}")
+    print(f"\OUTPUT_DIR: {OUTPUT_DIR}")
 
     eval_loss = 0
     step = None
@@ -345,6 +355,11 @@ def eval(model, eval_loader, device, with_labels=True):
         print('eval precision: {}'.format(round(precision_score(gold_labels, preds, average='macro'), 5)))
         print('eval recall: {}'.format(round(recall_score(gold_labels, preds, average='macro'), 5)))
         print('eval f1_score: {}'.format(round(f1_score(gold_labels, preds, average='macro'), 5)))
+
+        preds = preds.tolist()
+        gold_labels = gold_labels.tolist()
+        results = pd.DataFrame(list(zip(gold_labels, preds)), columns=['gold', 'preds'])
+        results.to_csv(f"{}.csv", index=False)
 
     return probs, eval_loss
 
