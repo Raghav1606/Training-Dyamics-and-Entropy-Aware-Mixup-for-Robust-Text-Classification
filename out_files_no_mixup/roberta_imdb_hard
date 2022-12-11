@@ -1,0 +1,161 @@
+Loading dataset
+Loading RoBERTa tokenizer and model
+Some weights of the model checkpoint at roberta-base were not used when initializing RobertaForSequenceClassification: ['lm_head.dense.weight', 'lm_head.layer_norm.weight', 'lm_head.dense.bias', 'lm_head.layer_norm.bias', 'lm_head.bias', 'lm_head.decoder.weight', 'roberta.pooler.dense.bias', 'roberta.pooler.dense.weight']
+- This IS expected if you are initializing RobertaForSequenceClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing RobertaForSequenceClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of RobertaForSequenceClassification were not initialized from the model checkpoint at roberta-base and are newly initialized: ['classifier.dense.bias', 'classifier.dense.weight', 'classifier.out_proj.weight', 'classifier.out_proj.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+Processing dataset
+(458, 2)
+(25000, 2)
+Test Data Loaded
+Fine-tuning model
+Epoch:   0%|          | 0/8 [00:00<?, ?it/s]
+Iteration:   0%|          | 0/5 [00:00<?, ?it/s][A
+Iteration:  20%|██        | 1/5 [00:00<00:02,  1.96it/s][A
+Iteration:  40%|████      | 2/5 [00:00<00:01,  2.54it/s][A
+Iteration:  60%|██████    | 3/5 [00:01<00:00,  2.83it/s][A
+Iteration:  80%|████████  | 4/5 [00:01<00:00,  2.98it/s][AIteration: 100%|██████████| 5/5 [00:01<00:00,  3.33it/s]
+train loss: 0.6574646794389897
+Evaluating model
+
+Evaluating:   0%|          | 0/13 [00:00<?, ?it/s][A
+Evaluating:  15%|█▌        | 2/13 [00:00<00:01, 10.36it/s][A
+Evaluating:  31%|███       | 4/13 [00:00<00:00, 10.27it/s][A
+Evaluating:  46%|████▌     | 6/13 [00:00<00:00, 10.25it/s][A
+Evaluating:  62%|██████▏   | 8/13 [00:00<00:00, 10.20it/s][A
+Evaluating:  77%|███████▋  | 10/13 [00:00<00:00, 10.19it/s][A
+Evaluating:  92%|█████████▏| 12/13 [00:01<00:00, 10.19it/s][AEvaluating: 100%|██████████| 13/13 [00:01<00:00, 10.61it/s]
+eval loss: 0.6933033110145626
+eval accuracy: 0.46
+Epoch:  12%|█▎        | 1/8 [00:02<00:19,  2.73s/it]
+Iteration:   0%|          | 0/5 [00:00<?, ?it/s][A
+Iteration:  20%|██        | 1/5 [00:00<00:01,  3.17it/s][A
+Iteration:  40%|████      | 2/5 [00:00<00:00,  3.22it/s][A
+Iteration:  60%|██████    | 3/5 [00:00<00:00,  3.21it/s][A
+Iteration:  80%|████████  | 4/5 [00:01<00:00,  3.21it/s][AIteration: 100%|██████████| 5/5 [00:01<00:00,  3.80it/s]
+train loss: 0.7011428463505974
+Evaluating model
+
+Evaluating:   0%|          | 0/13 [00:00<?, ?it/s][A
+Evaluating:  15%|█▌        | 2/13 [00:00<00:01, 10.25it/s][A
+Evaluating:  31%|███       | 4/13 [00:00<00:00, 10.20it/s][A
+Evaluating:  46%|████▌     | 6/13 [00:00<00:00, 10.19it/s][A
+Evaluating:  62%|██████▏   | 8/13 [00:00<00:00, 10.19it/s][A
+Evaluating:  77%|███████▋  | 10/13 [00:00<00:00, 10.18it/s][A
+Evaluating:  92%|█████████▏| 12/13 [00:01<00:00, 10.19it/s][AEvaluating: 100%|██████████| 13/13 [00:01<00:00, 10.58it/s]
+eval loss: 0.6920952526974664
+eval accuracy: 0.53
+Epoch:  25%|██▌       | 2/8 [00:05<00:15,  2.64s/it]
+Iteration:   0%|          | 0/5 [00:00<?, ?it/s][A
+Iteration:  20%|██        | 1/5 [00:00<00:01,  3.21it/s][A
+Iteration:  40%|████      | 2/5 [00:00<00:00,  3.19it/s][A
+Iteration:  60%|██████    | 3/5 [00:00<00:00,  3.21it/s][A
+Iteration:  80%|████████  | 4/5 [00:01<00:00,  3.20it/s][AIteration: 100%|██████████| 5/5 [00:01<00:00,  3.80it/s]
+train loss: 0.7035182129121182
+Evaluating model
+
+Evaluating:   0%|          | 0/13 [00:00<?, ?it/s][A
+Evaluating:  15%|█▌        | 2/13 [00:00<00:01, 10.41it/s][A
+Evaluating:  31%|███       | 4/13 [00:00<00:00, 10.22it/s][A
+Evaluating:  46%|████▌     | 6/13 [00:00<00:00, 10.19it/s][A
+Evaluating:  62%|██████▏   | 8/13 [00:00<00:00, 10.17it/s][A
+Evaluating:  77%|███████▋  | 10/13 [00:00<00:00, 10.12it/s][A
+Evaluating:  92%|█████████▏| 12/13 [00:01<00:00, 10.13it/s][AEvaluating: 100%|██████████| 13/13 [00:01<00:00, 10.55it/s]
+eval loss: 0.6904124702899318
+eval accuracy: 0.53
+Epoch:  38%|███▊      | 3/8 [00:07<00:13,  2.61s/it]
+Iteration:   0%|          | 0/5 [00:00<?, ?it/s][A
+Iteration:  20%|██        | 1/5 [00:00<00:01,  3.16it/s][A
+Iteration:  40%|████      | 2/5 [00:00<00:00,  3.18it/s][A
+Iteration:  60%|██████    | 3/5 [00:00<00:00,  3.18it/s][A
+Iteration:  80%|████████  | 4/5 [00:01<00:00,  3.18it/s][AIteration: 100%|██████████| 5/5 [00:01<00:00,  3.77it/s]
+train loss: 0.651421341220445
+Evaluating model
+
+Evaluating:   0%|          | 0/13 [00:00<?, ?it/s][A
+Evaluating:  15%|█▌        | 2/13 [00:00<00:01, 10.27it/s][A
+Evaluating:  31%|███       | 4/13 [00:00<00:00, 10.18it/s][A
+Evaluating:  46%|████▌     | 6/13 [00:00<00:00, 10.18it/s][A
+Evaluating:  62%|██████▏   | 8/13 [00:00<00:00, 10.15it/s][A
+Evaluating:  77%|███████▋  | 10/13 [00:00<00:00, 10.09it/s][A
+Evaluating:  92%|█████████▏| 12/13 [00:01<00:00, 10.09it/s][AEvaluating: 100%|██████████| 13/13 [00:01<00:00, 10.51it/s]
+eval loss: 0.6866528644145357
+eval accuracy: 0.53
+Epoch:  50%|█████     | 4/8 [00:10<00:10,  2.60s/it]
+Iteration:   0%|          | 0/5 [00:00<?, ?it/s][A
+Iteration:  20%|██        | 1/5 [00:00<00:01,  3.15it/s][A
+Iteration:  40%|████      | 2/5 [00:00<00:00,  3.17it/s][A
+Iteration:  60%|██████    | 3/5 [00:00<00:00,  3.17it/s][A
+Iteration:  80%|████████  | 4/5 [00:01<00:00,  3.18it/s][AIteration: 100%|██████████| 5/5 [00:01<00:00,  3.77it/s]
+train loss: 0.6406918963251147
+Evaluating model
+
+Evaluating:   0%|          | 0/13 [00:00<?, ?it/s][A
+Evaluating:  15%|█▌        | 2/13 [00:00<00:01, 10.14it/s][A
+Evaluating:  31%|███       | 4/13 [00:00<00:00, 10.12it/s][A
+Evaluating:  46%|████▌     | 6/13 [00:00<00:00, 10.11it/s][A
+Evaluating:  62%|██████▏   | 8/13 [00:00<00:00, 10.11it/s][A
+Evaluating:  77%|███████▋  | 10/13 [00:00<00:00, 10.08it/s][A
+Evaluating:  92%|█████████▏| 12/13 [00:01<00:00, 10.09it/s][AEvaluating: 100%|██████████| 13/13 [00:01<00:00, 10.49it/s]
+eval loss: 0.6870745876079101
+eval accuracy: 0.53
+Epoch:  62%|██████▎   | 5/8 [00:13<00:07,  2.60s/it]
+Iteration:   0%|          | 0/5 [00:00<?, ?it/s][A
+Iteration:  20%|██        | 1/5 [00:00<00:01,  3.19it/s][A
+Iteration:  40%|████      | 2/5 [00:00<00:00,  3.16it/s][A
+Iteration:  60%|██████    | 3/5 [00:00<00:00,  3.15it/s][A
+Iteration:  80%|████████  | 4/5 [00:01<00:00,  3.17it/s][AIteration: 100%|██████████| 5/5 [00:01<00:00,  3.76it/s]
+train loss: 0.5370699847962503
+Evaluating model
+
+Evaluating:   0%|          | 0/13 [00:00<?, ?it/s][A
+Evaluating:  15%|█▌        | 2/13 [00:00<00:01, 10.11it/s][A
+Evaluating:  31%|███       | 4/13 [00:00<00:00, 10.07it/s][A
+Evaluating:  46%|████▌     | 6/13 [00:00<00:00, 10.05it/s][A
+Evaluating:  62%|██████▏   | 8/13 [00:00<00:00, 10.09it/s][A
+Evaluating:  77%|███████▋  | 10/13 [00:00<00:00, 10.08it/s][A
+Evaluating:  92%|█████████▏| 12/13 [00:01<00:00, 10.08it/s][AEvaluating: 100%|██████████| 13/13 [00:01<00:00, 10.47it/s]
+eval loss: 0.6807730343124775
+eval accuracy: 0.53
+Epoch:  75%|███████▌  | 6/8 [00:15<00:05,  2.60s/it]
+Iteration:   0%|          | 0/5 [00:00<?, ?it/s][A
+Iteration:  20%|██        | 1/5 [00:00<00:01,  3.17it/s][A
+Iteration:  40%|████      | 2/5 [00:00<00:00,  3.16it/s][A
+Iteration:  60%|██████    | 3/5 [00:00<00:00,  3.16it/s][A
+Iteration:  80%|████████  | 4/5 [00:01<00:00,  3.16it/s][AIteration: 100%|██████████| 5/5 [00:01<00:00,  3.75it/s]
+train loss: 0.470829224103191
+Evaluating model
+
+Evaluating:   0%|          | 0/13 [00:00<?, ?it/s][A
+Evaluating:  15%|█▌        | 2/13 [00:00<00:01, 10.16it/s][A
+Evaluating:  31%|███       | 4/13 [00:00<00:00, 10.10it/s][A
+Evaluating:  46%|████▌     | 6/13 [00:00<00:00, 10.07it/s][A
+Evaluating:  62%|██████▏   | 8/13 [00:00<00:00, 10.09it/s][A
+Evaluating:  77%|███████▋  | 10/13 [00:00<00:00, 10.06it/s][A
+Evaluating:  92%|█████████▏| 12/13 [00:01<00:00, 10.05it/s][AEvaluating: 100%|██████████| 13/13 [00:01<00:00, 10.45it/s]
+eval loss: 0.6947975296839406
+eval accuracy: 0.53
+Epoch:  88%|████████▊ | 7/8 [00:18<00:02,  2.61s/it]
+Iteration:   0%|          | 0/5 [00:00<?, ?it/s][A
+Iteration:  20%|██        | 1/5 [00:00<00:01,  3.15it/s][A
+Iteration:  40%|████      | 2/5 [00:00<00:00,  3.14it/s][A
+Iteration:  60%|██████    | 3/5 [00:00<00:00,  3.17it/s][A
+Iteration:  80%|████████  | 4/5 [00:01<00:00,  3.02it/s][AIteration: 100%|██████████| 5/5 [00:01<00:00,  3.65it/s]
+train loss: 0.498662186098661
+Evaluating model
+
+Evaluating:   0%|          | 0/13 [00:00<?, ?it/s][A
+Evaluating:  15%|█▌        | 2/13 [00:00<00:01, 10.15it/s][A
+Evaluating:  31%|███       | 4/13 [00:00<00:00, 10.12it/s][A
+Evaluating:  46%|████▌     | 6/13 [00:00<00:00, 10.06it/s][A
+Evaluating:  62%|██████▏   | 8/13 [00:00<00:00, 10.02it/s][A
+Evaluating:  77%|███████▋  | 10/13 [00:00<00:00, 10.00it/s][A
+Evaluating:  92%|█████████▏| 12/13 [00:01<00:00, 10.01it/s][AEvaluating: 100%|██████████| 13/13 [00:01<00:00, 10.41it/s]
+eval loss: 0.6830796240738853
+eval accuracy: 0.53
+Epoch: 100%|██████████| 8/8 [00:20<00:00,  2.62s/it]Epoch: 100%|██████████| 8/8 [00:20<00:00,  2.62s/it]
+Saving model and tokenizer
+
+
+--------DONE--------
