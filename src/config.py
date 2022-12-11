@@ -3,7 +3,7 @@
 
 FLAG = True
 MIXUP_START = 4
-UE_JSD = True
+UE_JSD = False
 
 INPUT_COLUMN = 'text'
 DATA_COLUMN = 'category'
