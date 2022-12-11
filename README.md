@@ -28,30 +28,33 @@ python src/run_glue.py --train_file datasets/sarcasm/train.csv --validation_file
 The following infomation will be recorded during training:
 
 After training, we can find the log files in ./dy_log/{TASK_NAME}/{MODEL}/training_dynamics directory like:
-
+`
 dynamics_epoch_0.jsonl
 dynamics_epoch_1.jsonl
 dynamics_epoch_2.jsonl
-...
+`
 each file contains records like:
-
+`
 {"guid": 50325, "logits_epoch_0": [2.943110942840576, -2.2836594581604004], "gold": 0, "device": "cuda:0"}
 {"guid": 42123, "logits_epoch_0": [-2.7155513763427734, 3.249767541885376], "gold": 1, "device": "cuda:0"}
 {"guid": 42936, "logits_epoch_0": [-1.1907235383987427, 2.1173453330993652], "gold": 1, "device": "cuda:0"}
-...
+`
 
 ### Data Selection
 After recording the training dynamics, we can re-train the model by selecting a subset (e.g. use only the ambiguous samples for training). For example, for iSarcasm task and roberta-base model, just run:
 `
 python data_selection.py --task_name sarcasm --model_name roberta_base --burn_out 4
 `
-then you can get a json file at dy_log/sarcasm/roberta_base/three_regions_data_indices.json
+
+
+then you can get a json file at `dy_log/sarcasm/roberta_base/three_regions_data_indices.json`
 
 ### Data Categorization
 
-Using these idices, we ran the notebooks/data_prep.py file for saving the data into {DATASET_NAME}_easy /  {DATASET_NAME}_ambi etc. This can be found in Datasets folder. 
+Using these idices, we ran the notebooks/data_prep.py file for saving the data into `{DATASET_NAME}_easy /  {DATASET_NAME}_ambi` etc. This can be found in Datasets folder. 
 
 We ran in-domain classification using roberta_fine_tune.py
+
 
 `
 python -u roberta_fine_tune.py  --batch_size 8 --fname roberta_sarcasm_easy  --train_file datasets/sarcasm/sarcasm_easy.csv --val_file datasets/sarcasm/test.csv --output_dir roberta_ckpts_sarcasm_easy/ --task_name sarcasm >outfile/roberta_sarcasm_easy
