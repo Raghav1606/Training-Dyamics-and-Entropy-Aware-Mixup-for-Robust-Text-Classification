@@ -21,9 +21,9 @@ Please use the .yml file to set up the new environment before running the experi
 
 For example, we want to record the training dynamics of iSarcasm dataset, we do the following steps:
 
-...
+`
 python src/run_glue.py --train_file datasets/sarcasm/train.csv --validation_file datasets/sarcasm/test.csv --model_name_or_path roberta-base 
-...
+`
 
 The following infomation will be recorded during training:
 
@@ -42,9 +42,9 @@ each file contains records like:
 
 ### Data Selection
 After recording the training dynamics, we can re-train the model by selecting a subset (e.g. use only the ambiguous samples for training). For example, for iSarcasm task and roberta-base model, just run:
-...
+`
 python data_selection.py --task_name sarcasm --model_name roberta_base --burn_out 4
-...
+`
 then you can get a json file at dy_log/sarcasm/roberta_base/three_regions_data_indices.json
 
 ### Data Categorization
@@ -53,9 +53,9 @@ Using these idices, we ran the notebooks/data_prep.py file for saving the data i
 
 We ran in-domain classification using roberta_fine_tune.py
 
-...
+`
 python -u roberta_fine_tune.py  --batch_size 8 --fname roberta_sarcasm_easy  --train_file datasets/sarcasm/sarcasm_easy.csv --val_file datasets/sarcasm/test.csv --output_dir roberta_ckpts_sarcasm_easy/ --task_name sarcasm >outfile/roberta_sarcasm_easy
-...
+`
 
 ### Mixup
 
